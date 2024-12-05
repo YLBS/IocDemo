@@ -1,0 +1,77 @@
+﻿ 
+1.执行SQL查询 将结果集映射到DTO
+	查寻一条数据，返回 Dto
+	var result= await _context.Database.GetDbConnection().QueryFirstOrDefaultAsync<Dto>(sql);
+	查询多条，返回 IEnumerable<Dto>
+	var result= await _context.Database.GetDbConnection().QueryAsync<Dto>(sql);
+2.执行存储过程查询 
+	单个结果集
+	var param = new { 参数名称1 = 值,参数名称2 = 值.....};
+	var result= await _context.Database.GetDbConnection().QueryFirstOrDefaultAsync<Dto>("存储过程名称", param, commandType: CommandType.StoredProcedure);
+	一条数据，没有返回null
+	var param = new { 参数名称1 = 值,参数名称2 = 值.....};
+	var result= await _context.Database.GetDbConnection().QueryAsync<Dto>("存储过程名称", param, commandType: CommandType.StoredProcedure);
+	 
+	多个结果集
+	 var multiReader = await _context.Database.GetDbConnection().QueryMultipleAsync("存储过程名称", param, commandType: CommandType.StoredProcedure);
+	 // 假设第一个结果集是一个列表
+	 var firstResultSet = multiReader.Read<Dto1>();
+	 // 假设第二个结果集是一个分页总数
+	 var count = multiReader.Read<int>().ToList().FirstOrDefault();
+	 //最后关闭释放
+	 await multiReader.DisposeAsync();
+3.执行无结果集返回
+	例如执行修改的SQL
+	string sql = "UPDATE YourTable SET ColumnName = @Value WHERE ConditionColumn = @ConditionValue";
+	// 参数
+	var param = new { Value = "New Value", ConditionValue = "Condition" };
+	var result= await _context.Database.GetDbConnection().ExecuteAsync(sql,param);
+	result 为受影响行数
+
+	例如执行添加的存储过程
+	var param = new { Parameter1 = parameter1, Parameter2 = parameter2 };
+	var result = _context.Database.GetDbConnection().Execute("存储过程名称", param, commandType: CommandType.StoredProcedure);
+
+	存储过程使用了 SET NOCOUNT ON;
+	result 为-1 ，会影响判断。。。
+	result 为受影响行数
+
+	若存储过程有做判断，执行语句在return后，没有执行则会返回-1
+
+4.SQL查询返回一个总数目
+	string sql=""select count(*) from tableName";
+	var result = await _context.Database.GetDbConnection().QueryFirstOrDefaultAsync<int>(sql);
+5.获取存储过程输出的值 out 
+	例如
+	var param = new { MemID = memId, SalerID = userId, DeptUserID = departId };
+    var dynamicParams = new Dynamicparam(param); 
+    dynamicParams.Add("Result", dbType: DbType.Boolean, direction: ParameterDirection.Output);
+
+    var result = await _context.Database.GetDbConnection().ExecuteAsync(
+        "Sales_EnableViewCompany_N", dynamicParams,
+        commandType: CommandType.StoredProcedure
+    );
+	object outputParameterValue = dynamicParams.Get<object>("Result");
+	outputParameterValue 为输出值
+6.获取存储过程return值
+	例如
+	 var param = new Dynamicparam();
+     param.Add("ReturnValue", dbType: DbType.Int32, direction: ParameterDirection.ReturnValue); //返回值
+     param.Add("i",value:posId, dbType: DbType.Int32, direction: ParameterDirection.Input); //输入值，可以不写@符号
+
+     await _goodjobContext.Database.GetDbConnection().ExecuteAsync("TTT", param, commandType: CommandType.StoredProcedure);
+     int procedureReturn = param.Get<int>("ReturnValue");
+	 procedureReturn 就是返回值
+7.读取read
+	 using (var reader = await _context.Database.GetDbConnection()
+                       .ExecuteReaderAsync("Mng_GetPersonUserNameAndPassWord", param,
+                           commandType: CommandType.StoredProcedure))
+            {
+                if (await reader.ReadAsync())
+                {
+                    entry.Key = reader.GetString(0);
+                    entry.Value = reader.GetString(1);
+                }
+            }
+
+使用Dapper做自动映射，Dto里赋值的字段需要与跟数据库的查询的一致

@@ -1,0 +1,25 @@
+﻿Create DataBase Demo;
+go
+use Demo;
+go
+Create Table UserInfo
+(
+	Id int Identity primary key,
+	UserName varchar(50) not null,
+	Account varchar(100) unique not null,
+	Password varchar(100) not null
+)
+go
+Create Table RoleInfo
+(
+	Id int Identity primary key,
+	RoleName varchar(50) unique not null,
+)
+go
+--TRUNCATE TABLE RoleInfo;
+go
+Create Table UserRole(
+	Id int Identity primary key,
+	UserId int not null,
+	RoleId int not null
+)
