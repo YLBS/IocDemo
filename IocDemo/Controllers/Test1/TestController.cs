@@ -1,4 +1,5 @@
-﻿using IService;
+﻿using Common.Cache;
+using IService;
 using Microsoft.AspNetCore.Mvc;
 using Model;
 
@@ -72,6 +73,47 @@ namespace IocDemo.Controllers.Test1
             if(yn)
                 return Ok(ResultMode<object>.Success());
             return Ok(ResultMode<object>.Failed());
+        }
+        /// <summary>
+        /// 添加Redis缓存
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public IActionResult AddRedis(string key, string value) {
+            RedisCache.SetKey($"key_{key}", value, DateTime.Now.AddMinutes(1));
+            return Ok(ResultMode<object>.Success());
+        }
+        /// <summary>
+        /// 获取Redis指定键的值
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public IActionResult GetRedis(string key)
+        {
+            string value = RedisCache.GetKey($"key_{key}");
+            return Ok(ResultMode<string>.Success(value));
+        }
+        /// <summary>
+        /// 获取存储的所有的Redis
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public IActionResult GetAllRedis()
+        {
+            var value = RedisCache.GetAll();
+            return Ok(ResultMode<object>.Success(value));
+        }
+        /// <summary>
+        /// 删除
+        /// </summary>
+        /// <param name="key"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public IActionResult DelRedis(string key)
+        {
+            RedisCache.DelPosKey($"key_{key}");
+            return Ok(ResultMode<string>.Success());
         }
     }
 }
