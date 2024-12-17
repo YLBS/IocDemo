@@ -40,6 +40,8 @@ namespace Service
         {
             string sql = $"select Id,RoleName Name from RoleInfo where Id={id}";
             var result = await _context.Database.GetDbConnection().QueryFirstOrDefaultAsync<KeyValueModel>(sql);
+            if(result == null)
+                throw new NotImplementedException($"{id}——不存在");
             return result;
         }
     }
